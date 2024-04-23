@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.transaction.Transactional;
 import lombok.SneakyThrows;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
@@ -28,12 +29,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@Transactional
 public class WbExcelComputation implements Computation {
 
   @Autowired
   private ReportRepository reportRepository;
   @Autowired
   private ProductRepository productRepository;
+//
+//  public List<ReportComputeResultDto> computeAndSaveList(List<MultipartFile> xlsxs) {
+//    List<ReportComputeResultDto> resultDtos = new ArrayList<>();
+//    xlsxs.forEach(xlsx -> resultDtos.add(this.computeAndSave(xlsx)));
+//    return resultDtos;
+//  }
 
   @SneakyThrows
   public ReportComputeResultDto computeAndSave(MultipartFile xlsx) {
@@ -56,8 +64,8 @@ public class WbExcelComputation implements Computation {
       if (row.getRowNum() == 0) {
         continue;
       }
-      if (formatter.formatCellValue(row.getCell(10)).equals("Продажа")) {
-        System.out.println(row.getCell(11));
+      if (formatter.formatCellValue(row.getCell(10)).equalsIgnoreCase("Продажа")) {
+        System.out.println(row.getCell(10));
         rowsList.add(ReportRowSaleDto.builder()
             .number(formatter.formatCellValue(row.getCell(0)))
             .vendorСode(formatter.formatCellValue(row.getCell(5)))
@@ -81,8 +89,8 @@ public class WbExcelComputation implements Computation {
       if (row.getRowNum() == 0) {
         continue;
       }
-      if (formatter.formatCellValue(row.getCell(10)).equals("Логистика")
-          || formatter.formatCellValue(row.getCell(10)).equals("Логистика сторно")) {
+      if (formatter.formatCellValue(row.getCell(10)).equalsIgnoreCase("Логистика")
+          || formatter.formatCellValue(row.getCell(10)).equalsIgnoreCase("Логистика сторно")) {
         rowsList.add(ReportRowDeliveryDto.builder()
             .number(formatter.formatCellValue(row.getCell(0)))
             .vendorСode(formatter.formatCellValue(row.getCell(5)))
@@ -103,14 +111,14 @@ public class WbExcelComputation implements Computation {
       if (row.getRowNum() == 0) {
         continue;
       }
-      if (formatter.formatCellValue(row.getCell(10)).equals("Штрафы")) {
+      if (formatter.formatCellValue(row.getCell(10)).equalsIgnoreCase("Штраф")) {
         rowsList.add(ReportRowFineDto.builder()
             .number(formatter.formatCellValue(row.getCell(0)))
             .vendorCode(formatter.formatCellValue(row.getCell(5)))
             .name(formatter.formatCellValue(row.getCell(6)))
             .orderDate(LocalDate.parse(formatter.formatCellValue(row.getCell(11))))
             .saleDate(LocalDate.parse(formatter.formatCellValue(row.getCell(12))))
-            .finesPaid(BigDecimal.valueOf(row.getCell(33).getNumericCellValue()))
+            .finesPaid(BigDecimal.valueOf(row.getCell(35).getNumericCellValue()))
             .build());
       }
     }
@@ -124,7 +132,7 @@ public class WbExcelComputation implements Computation {
       if (row.getRowNum() == 0) {
         continue;
       }
-      if (formatter.formatCellValue(row.getCell(10)).equals("Оплата брака")) {
+      if (formatter.formatCellValue(row.getCell(10)).equalsIgnoreCase("Оплата брака")) {
         rowsList.add(AdditionalPaymentsRowDto.builder()
             .paid(BigDecimal.valueOf(row.getCell(29).getNumericCellValue()))
             .build());
@@ -179,7 +187,10 @@ public class WbExcelComputation implements Computation {
 
     for (String vendorCode : vendorCodes) {
       ReportProductInfoWbEmbded infoEmbded = new ReportProductInfoWbEmbded();
-      ProductEntity product = productRepository.getByVendorCode(vendorCode).orElse(null);
+      System.out.println("---------------------------------");
+      System.out.println(vendorCode);
+      System.out.println("---------------------------------");
+      ProductEntity product = productRepository.getByVendorCodeIgnoreCase(vendorCode).orElse(null);
       System.out.println(vendorCode);
       for (ReportRowSaleDto rowSale : saleRows) {
         if (rowSale.getVendorСode().equals(vendorCode)) {
